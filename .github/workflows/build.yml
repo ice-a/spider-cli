@@ -63,18 +63,29 @@ jobs:
       - name: Build release
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Prepare release
+      - name: Prepare release (Linux/macOS)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           mkdir -p npm/${{ matrix.platform }}/bin
           mkdir -p release
           BIN_SRC="target/${{ matrix.target }}/release/reptool${{ matrix.ext }}"
           cp "$BIN_SRC" "npm/${{ matrix.platform }}/bin/reptool${{ matrix.ext }}"
-          if [ "${{ runner.os }}" != "Windows" ]; then
-            chmod +x "npm/${{ matrix.platform }}/bin/reptool${{ matrix.ext }}"
-          fi
+          chmod +x "npm/${{ matrix.platform }}/bin/reptool${{ matrix.ext }}"
           cp "$BIN_SRC" "release/reptool${{ matrix.ext }}"
           cd release && zip "reptool-${{ matrix.platform }}.zip" "reptool${{ matrix.ext }}" && rm "reptool${{ matrix.ext }}" && cd ..
+
+      - name: Prepare release (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path npm/${{ matrix.platform }}/bin
+          New-Item -ItemType Directory -Force -Path release
+          $binSrc = "target/${{ matrix.target }}/release/reptool${{ matrix.ext }}"
+          Copy-Item $binSrc "npm/${{ matrix.platform }}/bin/reptool${{ matrix.ext }}"
+          Copy-Item $binSrc "release/reptool${{ matrix.ext }}"
+          Compress-Archive -Path "release/reptool${{ matrix.ext }}" -DestinationPath "release/reptool-${{ matrix.platform }}.zip"
+          Remove-Item "release/reptool${{ matrix.ext }}"
 
       - name: Upload npm artifact
         uses: actions/upload-artifact@v4

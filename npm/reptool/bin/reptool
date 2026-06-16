@@ -7,7 +7,6 @@ const fs = require("fs");
 const PLATFORMS = {
   "win32-x64": { pkg: "reptool-win32-x64", bin: "reptool.exe" },
   "linux-x64": { pkg: "reptool-linux-x64", bin: "reptool" },
-  "linux-arm64": { pkg: "reptool-linux-arm64", bin: "reptool" },
   "darwin-x64": { pkg: "reptool-darwin-x64", bin: "reptool" },
   "darwin-arm64": { pkg: "reptool-darwin-arm64", bin: "reptool" },
 };
@@ -18,7 +17,7 @@ function getBinaryPath() {
 
   if (!config) {
     console.error(`reptool: 不支持的平台 ${platform}`);
-    console.error("支持的平台: win32-x64, linux-x64, linux-arm64, darwin-x64, darwin-arm64");
+    console.error("支持的平台: win32-x64, linux-x64, darwin-x64, darwin-arm64");
     console.error("请从源码编译: cargo build --release");
     process.exit(1);
   }

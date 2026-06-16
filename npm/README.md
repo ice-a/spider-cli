@@ -28,7 +28,6 @@ npm install -g reptool
 |------|------|------|
 | Windows | x64 | `reptool-win32-x64` |
 | Linux | x64 | `reptool-linux-x64` |
-| Linux | ARM64 | `reptool-linux-arm64` |
 | macOS | x64 | `reptool-darwin-x64` |
 | macOS | ARM64 | `reptool-darwin-arm64` |
 

@@ -17,7 +17,6 @@
   "optionalDependencies": {
     "reptool-win32-x64": "0.1.0",
     "reptool-linux-x64": "0.1.0",
-    "reptool-linux-arm64": "0.1.0",
     "reptool-darwin-x64": "0.1.0",
     "reptool-darwin-arm64": "0.1.0"
   },

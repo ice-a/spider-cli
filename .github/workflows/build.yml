@@ -25,10 +25,6 @@ jobs:
             target: x86_64-unknown-linux-gnu
             platform: linux-x64
             binary: reptool
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            platform: linux-arm64
-            binary: reptool
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             platform: win32-x64
@@ -52,19 +48,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-
-      - name: Install cross-compilation tools (Linux ARM64)
-        if: matrix.platform == 'linux-arm64'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
-
-      - name: Configure cross-compilation (Linux ARM64)
-        if: matrix.platform == 'linux-arm64'
-        run: |
-          mkdir -p .cargo
-          echo '[target.aarch64-unknown-linux-gnu]' >> .cargo/config.toml
-          echo 'linker = "aarch64-linux-gnu-gcc"' >> .cargo/config.toml
 
       - name: Cache cargo
         uses: actions/cache@v4
@@ -151,7 +134,7 @@ jobs:
           npm version "$VERSION" --no-git-tag-version
           cd ..
           # Update platform package versions
-          for platform in win32-x64 linux-x64 linux-arm64 darwin-x64 darwin-arm64; do
+          for platform in win32-x64 linux-x64 darwin-x64 darwin-arm64; do
             if [ -d "$platform" ]; then
               cd "$platform"
               npm version "$VERSION" --no-git-tag-version
@@ -171,7 +154,7 @@ jobs:
       - name: Publish platform packages to npm
         run: |
           cd npm
-          for platform in win32-x64 linux-x64 linux-arm64 darwin-x64 darwin-arm64; do
+          for platform in win32-x64 linux-x64 darwin-x64 darwin-arm64; do
             if [ -d "$platform" ]; then
               echo "Publishing reptool-${platform}@${{ steps.version.outputs.VERSION }}"
               cd "$platform"
@@ -234,7 +217,7 @@ jobs:
           "
           cd ..
           # 更新平台包名称为 scoped
-          for platform in win32-x64 linux-x64 linux-arm64 darwin-x64 darwin-arm64; do
+          for platform in win32-x64 linux-x64 darwin-x64 darwin-arm64; do
             if [ -d "$platform" ]; then
               cd "$platform"
               node -e "
@@ -251,7 +234,7 @@ jobs:
       - name: Publish platform packages to GPR
         run: |
           cd npm
-          for platform in win32-x64 linux-x64 linux-arm64 darwin-x64 darwin-arm64; do
+          for platform in win32-x64 linux-x64 darwin-x64 darwin-arm64; do
             if [ -d "$platform" ]; then
               echo "Publishing @ice-a/reptool-${platform}@${{ steps.version.outputs.VERSION }}"
               cd "$platform"

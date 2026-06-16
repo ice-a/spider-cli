@@ -106,7 +106,139 @@ reptool mcp   # 启动 stdio MCP Server
 
 支持 Claude Code / Claude Desktop / Codex CLI / VS Code / Cursor / Windsurf 等工具。
 
-## 文档
+#### Claude Code
+
+编辑 `~/.claude/settings.json`：
+
+```json
+{
+  "mcpServers": {
+    "reptool": {
+      "command": "reptool",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+#### Claude Desktop
+
+编辑 `%APPDATA%\Claude\claude_desktop_config.json` (Windows) 或 `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)：
+
+```json
+{
+  "mcpServers": {
+    "reptool": {
+      "command": "reptool",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+#### OpenAI Codex CLI
+
+编辑 `~/.codex/config.json`：
+
+```json
+{
+  "mcpServers": {
+    "reptool": {
+      "command": "reptool",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+#### VS Code / Cursor
+
+在 `.vscode/mcp.json` 或 `.cursor/mcp.json`：
+
+```json
+{
+  "servers": {
+    "reptool": {
+      "command": "reptool",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+#### Windsurf
+
+编辑 `~/.codeium/windsurf/mcp_config.json`：
+
+```json
+{
+  "mcpServers": {
+    "reptool": {
+      "command": "reptool",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+#### Cline (VS Code 插件)
+
+编辑 `~/.cline/mcp_settings.json`：
+
+```json
+{
+  "mcpServers": {
+    "reptool": {
+      "command": "reptool",
+      "args": ["mcp"],
+      "type": "stdio"
+    }
+  }
+}
+```
+
+#### Zed Editor
+
+编辑 `~/.config/zed/settings.json`：
+
+```json
+{
+  "context_servers": {
+    "reptool": {
+      "command": "reptool",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+#### Continue.dev
+
+编辑 `~/.continue/config.json`：
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "reptool",
+      "command": "reptool",
+      "args": ["mcp"]
+    }
+  ]
+}
+```
+
+#### 验证连接
+
+配置完成后输入：`帮我用 reptool 计算 md5: hello`
+
+| 你说的话 | 调用的工具 |
+|----------|-----------|
+| "分析 app.js 的加密函数" | `js_analyze_sign` |
+| "导出为 curl" | `export_curl` |
+| "计算 md5: hello" | `crypto_hash` |
+| "对比这两份 HAR" | `har_diff` |
+| "生成 Frida SSL bypass 脚本" | `js_hook_generate` |
 
 完整文档请访问 [GitHub](https://github.com/ice-a/spider-cli)
 

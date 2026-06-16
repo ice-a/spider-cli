@@ -1,14 +1,17 @@
 {
-  "name": "@ice-lds/reptool",
+  "name": "reptool",
   "version": "1.0.0",
-  "description": "Rust 全栈逆向/爬虫/代理 CLI 工具链 - 集成 mitmproxy + Frida + AI + 加密工具箱 + MCP Server",
+  "description": "Rust 全栈逆向/爬虫/代理 CLI 工具链 - mitmproxy + Frida + AI + 加密工具箱 + MCP Server",
+  "main": "install.js",
   "bin": {
     "reptool": "./bin/reptool.exe"
   },
   "files": [
     "bin/",
     "install.js",
-    "platforms.json"
+    "platforms.json",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "postinstall": "node install.js"
@@ -25,13 +28,20 @@
     "mcp",
     "frida",
     "security",
-    "ai"
+    "ai",
+    "cli",
+    "tool",
+    "reptool"
   ],
-  "author": "",
+  "author": "ice-a",
   "license": "MIT",
+  "homepage": "https://github.com/ice-a/spider-cli#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your/reptool.git"
+    "url": "git+https://github.com/ice-a/spider-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ice-a/spider-cli/issues"
   },
   "engines": {
     "node": ">=14"

@@ -27,7 +27,7 @@ npm install -g reptool
 ### 从源码编译
 
 ```bash
-git clone https://github.com/your/reptool.git
+git clone https://github.com/ice-a/spider-cli.git
 cd reptool
 cargo build --release
 # 二进制位于 target/release/reptool
@@ -35,7 +35,7 @@ cargo build --release
 
 ### 下载预编译二进制
 
-从 [Releases](https://github.com/your/reptool/releases) 下载对应平台的二进制文件。
+从 [Releases](https://github.com/ice-a/spider-cli/releases) 下载对应平台的二进制文件。
 
 ## 快速开始
 

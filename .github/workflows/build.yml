@@ -1,0 +1,299 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            platform: linux-x64
+            binary: reptool
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            platform: linux-arm64
+            binary: reptool
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            platform: win32-x64
+            binary: reptool.exe
+          - os: macos-13
+            target: x86_64-apple-darwin
+            platform: darwin-x64
+            binary: reptool
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            platform: darwin-arm64
+            binary: reptool
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross-compilation tools (Linux ARM64)
+        if: matrix.platform == 'linux-arm64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Configure cross-compilation (Linux ARM64)
+        if: matrix.platform == 'linux-arm64'
+        run: |
+          mkdir -p .cargo
+          echo '[target.aarch64-unknown-linux-gnu]' >> .cargo/config.toml
+          echo 'linker = "aarch64-linux-gnu-gcc"' >> .cargo/config.toml
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ matrix.platform }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.platform }}-cargo-
+
+      - name: Build release
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Prepare binary (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p npm/${{ matrix.platform }}/bin
+          cp target/${{ matrix.target }}/release/${{ matrix.binary }} npm/${{ matrix.platform }}/bin/
+          chmod +x npm/${{ matrix.platform }}/bin/${{ matrix.binary }}
+          # 复制到 release 目录用于 GitHub Release
+          mkdir -p release
+          cp npm/${{ matrix.platform }}/bin/${{ matrix.binary }} release/reptool-${{ matrix.platform }}${{ matrix.binary == 'reptool.exe' && '.exe' || '' }}
+          cd release && zip reptool-${{ matrix.platform }}.zip reptool-${{ matrix.platform }}${{ matrix.binary == 'reptool.exe' && '.exe' || '' }} && cd ..
+
+      - name: Prepare binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path npm/${{ matrix.platform }}/bin
+          Copy-Item target/${{ matrix.target }}/release/${{ matrix.binary }} npm/${{ matrix.platform }}/bin/
+          # 复制到 release 目录用于 GitHub Release
+          New-Item -ItemType Directory -Force -Path release
+          Copy-Item target/${{ matrix.target }}/release/${{ matrix.binary }} release/reptool-${{ matrix.platform }}.exe
+          Compress-Archive -Path release/reptool-${{ matrix.platform }}.exe -DestinationPath release/reptool-${{ matrix.platform }}.zip
+
+      - name: Upload npm artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-${{ matrix.platform }}
+          path: npm/${{ matrix.platform }}/
+
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.platform }}
+          path: release/
+
+  publish-npm:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all npm artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: npm-*
+          path: npm/
+          merge-multiple: true
+
+      - name: List downloaded files
+        run: find npm/ -type f | head -50
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Update package versions
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          # Update main package version
+          cd npm/reptool
+          npm version "$VERSION" --no-git-tag-version
+          cd ..
+          # Update platform package versions
+          for platform in win32-x64 linux-x64 linux-arm64 darwin-x64 darwin-arm64; do
+            if [ -d "$platform" ]; then
+              cd "$platform"
+              npm version "$VERSION" --no-git-tag-version
+              cd ..
+            fi
+          done
+          # Update optionalDependencies versions in main package
+          node -e "
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('reptool/package.json', 'utf8'));
+          for (const dep in pkg.optionalDependencies) {
+            pkg.optionalDependencies[dep] = '$VERSION';
+          }
+          fs.writeFileSync('reptool/package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+
+      - name: Publish platform packages to npm
+        run: |
+          cd npm
+          for platform in win32-x64 linux-x64 linux-arm64 darwin-x64 darwin-arm64; do
+            if [ -d "$platform" ]; then
+              echo "Publishing reptool-${platform}@${{ steps.version.outputs.VERSION }}"
+              cd "$platform"
+              npm publish --access public
+              cd ..
+            fi
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish main package to npm
+        run: |
+          cd npm/reptool
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  publish-gpr:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all npm artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: npm-*
+          path: npm/
+          merge-multiple: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@ice-a'
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Update package versions for GPR
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          # 更新主包名称为 scoped
+          cd npm/reptool
+          node -e "
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          pkg.name = '@ice-a/reptool';
+          pkg.repository.url = 'git+https://github.com/ice-a/spider-cli.git';
+          pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
+          for (const dep in pkg.optionalDependencies) {
+            pkg.optionalDependencies[dep] = '$VERSION';
+          }
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+          cd ..
+          # 更新平台包名称为 scoped
+          for platform in win32-x64 linux-x64 linux-arm64 darwin-x64 darwin-arm64; do
+            if [ -d "$platform" ]; then
+              cd "$platform"
+              node -e "
+              const fs = require('fs');
+              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+              pkg.name = '@ice-a/' + pkg.name;
+              pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
+              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+              "
+              cd ..
+            fi
+          done
+
+      - name: Publish platform packages to GPR
+        run: |
+          cd npm
+          for platform in win32-x64 linux-x64 linux-arm64 darwin-x64 darwin-arm64; do
+            if [ -d "$platform" ]; then
+              echo "Publishing @ice-a/reptool-${platform}@${{ steps.version.outputs.VERSION }}"
+              cd "$platform"
+              npm publish --access public
+              cd ..
+            fi
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish main package to GPR
+        run: |
+          cd npm/reptool
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: release/
+          merge-multiple: true
+
+      - name: List release files
+        run: find release/ -type f
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          files: |
+            release/**/*.zip
+            release/**/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

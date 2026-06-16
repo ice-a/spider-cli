@@ -1,0 +1,16 @@
+{
+  "name": "reptool-linux-x64",
+  "version": "0.1.0",
+  "description": "Reptool Linux x64 binary - Rust 全栈逆向/爬虫/代理 CLI 工具链",
+  "os": ["linux"],
+  "cpu": ["x64"],
+  "bin": {
+    "reptool": "bin/reptool"
+  },
+  "files": ["bin/reptool"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ice-a/spider-cli.git"
+  }
+}

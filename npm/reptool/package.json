@@ -1,20 +1,25 @@
 {
   "name": "reptool",
-  "version": "1.0.0",
-  "description": "Rust 全栈逆向/爬虫/代理 CLI 工具链 - mitmproxy + Frida + AI + 加密工具箱 + MCP Server",
-  "main": "install.js",
+  "version": "0.1.0",
+  "description": "Rust 全栈逆向/爬虫/代理 CLI 工具链 + Claude/Codex 智能体技能系统",
+  "main": "bin/reptool",
   "bin": {
-    "reptool": "./bin/reptool.exe"
+    "reptool": "bin/reptool"
   },
   "files": [
     "bin/",
-    "install.js",
-    "platforms.json",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "postinstall": "node install.js"
+    "postinstall": "node -e \"console.log('reptool installed successfully')\""
+  },
+  "optionalDependencies": {
+    "reptool-win32-x64": "0.1.0",
+    "reptool-linux-x64": "0.1.0",
+    "reptool-linux-arm64": "0.1.0",
+    "reptool-darwin-x64": "0.1.0",
+    "reptool-darwin-arm64": "0.1.0"
   },
   "keywords": [
     "reverse-engineering",

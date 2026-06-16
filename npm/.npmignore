@@ -1,0 +1,19 @@
+# npm 发布忽略文件
+target/
+*.exe
+*.pdb
+*.d
+*.zip
+*.tar.gz
+node_modules/
+tests/
+*.md
+!README.md
+LICENSE
+.gitignore
+build-all.sh
+publish.sh
+publish.bat
+reptool-*.zip
+ca.cer
+test*.js

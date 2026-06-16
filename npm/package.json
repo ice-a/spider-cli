@@ -1,0 +1,39 @@
+{
+  "name": "@ice-lds/reptool",
+  "version": "1.0.0",
+  "description": "Rust 全栈逆向/爬虫/代理 CLI 工具链 - 集成 mitmproxy + Frida + AI + 加密工具箱 + MCP Server",
+  "bin": {
+    "reptool": "./bin/reptool.exe"
+  },
+  "files": [
+    "bin/",
+    "install.js",
+    "platforms.json"
+  ],
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "keywords": [
+    "reverse-engineering",
+    "crawler",
+    "proxy",
+    "mitm",
+    "har",
+    "javascript",
+    "crypto",
+    "deobfuscation",
+    "mcp",
+    "frida",
+    "security",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your/reptool.git"
+  },
+  "engines": {
+    "node": ">=14"
+  }
+}

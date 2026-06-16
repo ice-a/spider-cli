@@ -1,0 +1,6 @@
+{
+  "win32-x64": "reptool-win-x64.exe.zip",
+  "linux-x64": "reptool-linux-x64.zip",
+  "darwin-x64": "reptool-macos-x64.zip",
+  "darwin-arm64": "reptool-macos-arm64.zip"
+}

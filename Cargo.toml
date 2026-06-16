@@ -1,0 +1,60 @@
+[package]
+name = "reptool"
+version = "0.1.0"
+edition = "2021"
+description = "Rust 全栈逆向/爬虫/代理 CLI 工具链"
+
+[[bin]]
+name = "reptool"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+hyper = { version = "1", features = ["full"] }
+hyper-util = { version = "0.1", features = ["tokio", "http1", "http2"] }
+http-body-util = "0.1"
+clap = { version = "4", features = ["derive", "color"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", features = ["json", "cookies", "multipart", "socks"] }
+regex = "1"
+base64 = "0.22"
+md-5 = "0.10"
+sha1 = "0.10"
+sha2 = "0.10"
+hmac = "0.12"
+aes = "0.8"
+cbc = "0.1"
+ecb = "0.1"
+des = "0.8"
+rc4 = "0.1"
+rsa = { version = "0.9", features = ["pem"] }
+rand = "0.8"
+uuid = { version = "1", features = ["v4"] }
+chrono = "0.4"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+anyhow = "1"
+thiserror = "2"
+tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
+url = "2"
+urlencoding = "2"
+toml = "0.8"
+dirs = "5"
+colored = "2"
+hex = "0.4"
+zip = "2"
+rcgen = "0.13"
+futures-util = "0.3"
+aes-gcm = "0.10"
+signature = "2"
+tokio-rustls = "0.26"
+rustls = "0.23"
+rustls-pki-types = "1"
+rustls-pemfile = "2"
+webpki-roots = "0.26"
+chromiumoxide = { version = "0.7", features = ["tokio-runtime"] }
+tempfile = "3"
+
+[dev-dependencies]
+tempfile = "3"

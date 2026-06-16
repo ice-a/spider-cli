@@ -1,0 +1,14 @@
+/target/
+/release/
+*.exe
+*.dll
+*.so
+*.dylib
+*.pdb
+*.zip
+*.tar.gz
+node_modules/
+npm/bin/reptool
+npm/bin/reptool-*.exe
+ca.cer
+test*.js

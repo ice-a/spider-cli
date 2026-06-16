@@ -1,6 +1,6 @@
 {
   "name": "reptool-darwin-arm64",
-  "version": "0.1.0",
+  "version": "1.0.2",
   "description": "Reptool macOS ARM64 binary - Rust 全栈逆向/爬虫/代理 CLI 工具链",
   "os": ["darwin"],
   "cpu": ["arm64"],

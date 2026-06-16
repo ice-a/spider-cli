@@ -131,23 +131,26 @@ jobs:
       - name: Update package versions
         run: |
           VERSION=${{ steps.version.outputs.VERSION }}
-          cd npm/reptool
-          npm version "$VERSION" --no-git-tag-version
-          cd ..
-          for platform in win32-x64 linux-x64 darwin-x64 darwin-arm64; do
-            if [ -d "$platform" ]; then
-              cd "$platform"
-              npm version "$VERSION" --no-git-tag-version
-              cd ..
-            fi
-          done
           node -e "
           const fs = require('fs');
-          const pkg = JSON.parse(fs.readFileSync('reptool/package.json', 'utf8'));
-          for (const dep in pkg.optionalDependencies) {
-            pkg.optionalDependencies[dep] = '$VERSION';
+          const path = require('path');
+          const version = '$VERSION';
+          // Update main package
+          const mainPkg = JSON.parse(fs.readFileSync('npm/reptool/package.json', 'utf8'));
+          mainPkg.version = version;
+          for (const dep in mainPkg.optionalDependencies) {
+            mainPkg.optionalDependencies[dep] = version;
           }
-          fs.writeFileSync('reptool/package.json', JSON.stringify(pkg, null, 2) + '\n');
+          fs.writeFileSync('npm/reptool/package.json', JSON.stringify(mainPkg, null, 2) + '\n');
+          // Update platform packages
+          for (const platform of ['win32-x64', 'linux-x64', 'darwin-x64', 'darwin-arm64']) {
+            const pkgPath = path.join('npm', platform, 'package.json');
+            if (fs.existsSync(pkgPath)) {
+              const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+              pkg.version = version;
+              fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+            }
+          }
           "
 
       - name: Publish platform packages to npm

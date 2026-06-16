@@ -217,7 +217,7 @@ reptool config list                                   # 列出配置
 
 ## MCP Server
 
-Reptool 内置 MCP Server，可直接被 Claude Code / VS Code 等 LLM 客户端调用。
+Reptool 内置 MCP Server，可被所有支持 MCP 协议的 AI 编程工具调用。
 
 ```bash
 reptool mcp   # 启动 stdio MCP Server
@@ -238,11 +238,21 @@ reptool mcp   # 启动 stdio MCP Server
 | APP | `mini_wxapkg_parse`, `mini_apk_extract`, `proto_decode` |
 | 配置 | `config_get`, `config_set` |
 
-### 配置 Claude Code 使用 Reptool MCP
+### 各工具配置教程
 
-#### 方法 1: 全局配置 (推荐)
+> **通用提示：** 如果 `reptool` 不在 PATH 中，将命令替换为完整路径：
+> - Windows: `C:/Users/<用户名>/AppData/Roaming/npm/node_modules/reptool/bin/reptool.exe`
+> - macOS/Linux: `$(which reptool)` 或 `/usr/local/bin/reptool`
 
-编辑 `~/.claude/claude_desktop_config.json` (Windows: `%APPDATA%\Claude\claude_desktop_config.json`)：
+---
+
+#### 1. Claude Code (终端 AI 编程助手)
+
+Claude Code 是 Anthropic 官方的终端 AI 编程工具，支持 MCP。
+
+**方法 A: 全局配置 (推荐)**
+
+编辑 `~/.claude/settings.json`：
 
 ```json
 {
@@ -255,20 +265,7 @@ reptool mcp   # 启动 stdio MCP Server
 }
 ```
 
-如果 reptool 不在 PATH 中，使用完整路径：
-
-```json
-{
-  "mcpServers": {
-    "reptool": {
-      "command": "C:/Users/你的用户名/AppData/Roaming/npm/node_modules/reptool/bin/reptool.exe",
-      "args": ["mcp"]
-    }
-  }
-}
-```
-
-#### 方法 2: 项目级配置
+**方法 B: 项目级配置**
 
 在项目根目录创建 `.mcp.json`：
 
@@ -283,9 +280,101 @@ reptool mcp   # 启动 stdio MCP Server
 }
 ```
 
-#### 方法 3: VS Code / Cursor
+**使用示例：**
 
-在 `.vscode/settings.json` 或项目设置中添加：
+```bash
+# 启动 Claude Code 后直接对话
+> 帮我分析这段 JS 的加密逻辑
+> 把这个 HAR 请求导出为 curl
+> 计算 md5: hello
+```
+
+---
+
+#### 2. Claude Desktop (桌面客户端)
+
+**Windows 配置：**
+
+编辑 `%APPDATA%\Claude\claude_desktop_config.json`：
+
+```json
+{
+  "mcpServers": {
+    "reptool": {
+      "command": "C:/Users/<用户名>/AppData/Roaming/npm/node_modules/reptool/bin/reptool.exe",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+**macOS 配置：**
+
+编辑 `~/Library/Application Support/Claude/claude_desktop_config.json`：
+
+```json
+{
+  "mcpServers": {
+    "reptool": {
+      "command": "reptool",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+重启 Claude Desktop 后生效。
+
+---
+
+#### 3. OpenAI Codex CLI
+
+Codex CLI 是 OpenAI 的终端编程工具，支持 MCP Server。
+
+编辑 `~/.codex/config.json` (或 `~/.codex/config.yaml`)：
+
+```json
+{
+  "mcpServers": {
+    "reptool": {
+      "command": "reptool",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+或使用 YAML 格式：
+
+```yaml
+mcpServers:
+  reptool:
+    command: reptool
+    args: ["mcp"]
+```
+
+---
+
+#### 4. VS Code / Cursor (GitHub Copilot)
+
+**方法 A: 使用 Copilot Chat 的 MCP 配置**
+
+在 `.vscode/mcp.json` (或 Cursor 的 `.cursor/mcp.json`)：
+
+```json
+{
+  "servers": {
+    "reptool": {
+      "command": "reptool",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+**方法 B: VS Code 原生 MCP 支持 (1.99+)**
+
+在 `.vscode/settings.json` 中添加：
 
 ```json
 {
@@ -300,26 +389,114 @@ reptool mcp   # 启动 stdio MCP Server
 }
 ```
 
-#### 验证 MCP 连接
+---
 
-启动 Claude 后，输入：
+#### 5. Windsurf (Codeium)
+
+Windsurf 是 Codeium 推出的 AI 编辑器，原生支持 MCP。
+
+编辑 `~/.codeium/windsurf/mcp_config.json`：
+
+```json
+{
+  "mcpServers": {
+    "reptool": {
+      "command": "reptool",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+---
+
+#### 6. Cline (VS Code 插件)
+
+安装 [Cline](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev) 插件后：
+
+1. 打开 Cline 侧边栏
+2. 点击右上角齿轮图标 → MCP Servers
+3. 点击 "Add new MCP server"
+4. 填写：
+   - Name: `reptool`
+   - Type: `command`
+   - Command: `reptool mcp`
+
+或直接编辑 `~/.cline/mcp_settings.json`：
+
+```json
+{
+  "mcpServers": {
+    "reptool": {
+      "command": "reptool",
+      "args": ["mcp"],
+      "type": "stdio"
+    }
+  }
+}
+```
+
+---
+
+#### 7. Zed Editor
+
+编辑 `~/.config/zed/settings.json`，在 `context_servers` 中添加：
+
+```json
+{
+  "context_servers": {
+    "reptool": {
+      "command": "reptool",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+---
+
+#### 8. Continue.dev
+
+编辑 `~/.continue/config.json`：
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "reptool",
+      "command": "reptool",
+      "args": ["mcp"]
+    }
+  ]
+}
+```
+
+---
+
+### 验证 MCP 连接
+
+配置完成后，启动对应工具并输入：
 
 ```
-请帮我用 reptool 分析这段 JS 的加密逻辑
+请帮我用 reptool 计算 md5: hello
 ```
 
-Claude 会自动调用 `js_analyze_sign`、`crypto_hash` 等工具。
+如果返回正确结果，说明 MCP 连接成功。
 
-#### 可用的 MCP 工具示例
+### 常用对话示例
 
-| 你说的话 | Claude 调用的工具 |
-|----------|-------------------|
+| 你说的话 | 调用的工具 |
+|----------|-----------|
 | "帮我分析 app.js 的加密函数" | `js_analyze_sign` |
 | "把这个请求导出为 curl" | `export_curl` |
 | "计算 md5: hello" | `crypto_hash` |
 | "对比这两份 HAR 的差异" | `har_diff` |
 | "生成 Frida SSL bypass 脚本" | `js_hook_generate` |
 | "分析这段流量的可疑接口" | `har_filter` |
+| "AES-CBC 加密 hello，key 是 1234567890123456" | `crypto_encrypt` |
+| "扫描这个目录下所有 JS 的 API 接口" | `js_extract_apis` |
+| "解析这个 HAR 文件的 cookie 和参数" | `har_parse` |
+| "导出为 Python requests 代码" | `export_python` |
 
 ## 架构
 

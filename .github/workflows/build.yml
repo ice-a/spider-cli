@@ -155,7 +155,7 @@ jobs:
 
       - name: Publish platform packages to npm
         run: |
-          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
           cd npm
           for platform in win32-x64 linux-x64 darwin-x64 darwin-arm64; do
             if [ -d "$platform" ]; then
@@ -170,10 +170,9 @@ jobs:
 
       - name: Publish main package to npm
         run: |
-          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
           cd npm/reptool
           npm publish --access public
-          rm -f .npmrc
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

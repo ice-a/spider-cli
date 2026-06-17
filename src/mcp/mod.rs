@@ -1,31 +1,29 @@
 use anyhow::anyhow;
 use anyhow::Result;
 use serde_json::{json, Value};
-
-use crate::core;
+use std::io::BufRead;
 
 pub fn run() -> Result<()> {
-    core::info("MCP Server 启动 (stdio)");
+    eprintln!("reptool MCP Server v0.1.0 启动 (stdio)");
 
-    loop {
-        let mut input = String::new();
-        match std::io::Read::read_to_string(&mut std::io::stdin(), &mut input) {
-            Ok(0) => break,
-            Ok(_) => {}
-            Err(e) => {
-                eprintln!("读取错误: {}", e);
-                break;
-            }
-        }
+    let stdin = std::io::stdin();
+    let reader = stdin.lock();
 
-        let trimmed = input.trim();
+    for line in reader.lines() {
+        let line = match line {
+            Ok(l) => l,
+            Err(_) => break,
+        };
+
+        let trimmed = line.trim();
         if trimmed.is_empty() {
             continue;
         }
 
         if let Ok(request) = serde_json::from_str::<Value>(trimmed) {
             let response = handle_request(&request);
-            println!("{}", serde_json::to_string(&response).unwrap_or_default());
+            let output = serde_json::to_string(&response).unwrap_or_default();
+            println!("{}", output);
         }
     }
 

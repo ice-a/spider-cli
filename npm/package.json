@@ -2,23 +2,18 @@
   "name": "reptool",
   "version": "1.0.2",
   "description": "Rust 全栈逆向/爬虫/代理 CLI 工具链 + Claude/Codex 智能体技能系统",
-  "main": "bin/reptool",
+  "main": "install.js",
   "bin": {
     "reptool": "bin/reptool"
   },
   "files": [
     "bin/",
+    "install.js",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "postinstall": "node -e \"console.log('reptool installed successfully')\""
-  },
-  "optionalDependencies": {
-    "reptool-win32-x64": "1.0.2",
-    "reptool-linux-x64": "1.0.2",
-    "reptool-darwin-x64": "1.0.2",
-    "reptool-darwin-arm64": "1.0.2"
+    "postinstall": "node install.js"
   },
   "keywords": [
     "reverse-engineering",

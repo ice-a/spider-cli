@@ -13,7 +13,6 @@ env:
 
 permissions:
   contents: write
-  packages: write
 
 jobs:
   build:
@@ -67,175 +66,26 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          mkdir -p npm/${{ matrix.platform }}/bin
           mkdir -p release
           BIN_SRC="target/${{ matrix.target }}/release/reptool${{ matrix.ext }}"
-          cp "$BIN_SRC" "npm/${{ matrix.platform }}/bin/reptool${{ matrix.ext }}"
-          chmod +x "npm/${{ matrix.platform }}/bin/reptool${{ matrix.ext }}"
-          cp "$BIN_SRC" "release/reptool${{ matrix.ext }}"
-          cd release && zip "reptool-${{ matrix.platform }}.zip" "reptool${{ matrix.ext }}" && rm "reptool${{ matrix.ext }}" && cd ..
+          cp "$BIN_SRC" "release/reptool-${{ matrix.platform }}${{ matrix.ext }}"
+          cd release && zip "reptool-${{ matrix.platform }}.zip" "reptool-${{ matrix.platform }}${{ matrix.ext }}" && rm "reptool-${{ matrix.platform }}${{ matrix.ext }}" && cd ..
 
       - name: Prepare release (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path npm/${{ matrix.platform }}/bin
           New-Item -ItemType Directory -Force -Path release
           $binSrc = "target/${{ matrix.target }}/release/reptool${{ matrix.ext }}"
-          Copy-Item $binSrc "npm/${{ matrix.platform }}/bin/reptool${{ matrix.ext }}"
-          Copy-Item $binSrc "release/reptool${{ matrix.ext }}"
-          Compress-Archive -Path "release/reptool${{ matrix.ext }}" -DestinationPath "release/reptool-${{ matrix.platform }}.zip"
-          Remove-Item "release/reptool${{ matrix.ext }}"
+          Copy-Item $binSrc "release/reptool-${{ matrix.platform }}${{ matrix.ext }}"
+          Compress-Archive -Path "release/reptool-${{ matrix.platform }}${{ matrix.ext }}" -DestinationPath "release/reptool-${{ matrix.platform }}.zip"
+          Remove-Item "release/reptool-${{ matrix.platform }}${{ matrix.ext }}"
 
-      - name: Upload npm artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: npm-${{ matrix.platform }}
-          path: npm/${{ matrix.platform }}
-
-      - name: Upload release artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-${{ matrix.platform }}
           path: release/
-
-  publish-npm:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/v')
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download platform artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: npm-*
-          path: artifacts/
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
-
-      - name: Get version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Prepare and publish
-        run: |
-          VERSION=${{ steps.version.outputs.VERSION }}
-          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
-
-          # Copy platform binaries from artifacts into npm/ directories
-          for platform in win32-x64 linux-x64 darwin-x64 darwin-arm64; do
-            src="artifacts/npm-${platform}"
-            if [ -d "$src" ]; then
-              mkdir -p "npm/${platform}/bin"
-              cp -r "$src"/* "npm/${platform}/"
-              # Update version
-              node -e "
-              const fs = require('fs');
-              const p = 'npm/${platform}/package.json';
-              if (fs.existsSync(p)) {
-                const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
-                pkg.version = '${VERSION}';
-                fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
-              }
-              "
-              echo "Publishing reptool-${platform}@${VERSION}"
-              cd "npm/${platform}"
-              npm publish --access public 2>&1 || echo "WARN: failed to publish reptool-${platform}"
-              cd ../..
-            fi
-          done
-
-          # Update and publish main package
-          node -e "
-          const fs = require('fs');
-          const pkg = JSON.parse(fs.readFileSync('npm/reptool/package.json', 'utf8'));
-          pkg.version = '${VERSION}';
-          for (const d in pkg.optionalDependencies) pkg.optionalDependencies[d] = '${VERSION}';
-          fs.writeFileSync('npm/reptool/package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-          echo "Publishing reptool@${VERSION}"
-          cd npm/reptool
-          npm publish --access public 2>&1
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  publish-gpr:
-    needs: build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/v')
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download platform artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: npm-*
-          path: artifacts/
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@ice-a'
-
-      - name: Get version from tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-      - name: Prepare and publish GPR
-        run: |
-          VERSION=${{ steps.version.outputs.VERSION }}
-
-          # Copy platform binaries from artifacts into npm/ directories
-          for platform in win32-x64 linux-x64 darwin-x64 darwin-arm64; do
-            src="artifacts/npm-${platform}"
-            if [ -d "$src" ]; then
-              mkdir -p "npm/${platform}/bin"
-              cp -r "$src"/* "npm/${platform}/"
-              # Update version and rename to scoped
-              node -e "
-              const fs = require('fs');
-              const p = 'npm/${platform}/package.json';
-              if (fs.existsSync(p)) {
-                const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
-                pkg.name = '@ice-a/' + pkg.name;
-                pkg.version = '${VERSION}';
-                pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
-                fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
-              }
-              "
-              echo "Publishing @ice-a/reptool-${platform}@${VERSION}"
-              cd "npm/${platform}"
-              npm publish --access public 2>&1 || echo "WARN: failed to publish @ice-a/reptool-${platform}"
-              cd ../..
-            fi
-          done
-
-          # Update and publish main package
-          node -e "
-          const fs = require('fs');
-          const pkg = JSON.parse(fs.readFileSync('npm/reptool/package.json', 'utf8'));
-          pkg.name = '@ice-a/reptool';
-          pkg.version = '${VERSION}';
-          pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
-          for (const d in pkg.optionalDependencies) pkg.optionalDependencies[d] = '${VERSION}';
-          fs.writeFileSync('npm/reptool/package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-          echo "Publishing @ice-a/reptool@${VERSION}"
-          cd npm/reptool
-          npm publish --access public 2>&1
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release:
     needs: build
@@ -250,20 +100,15 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Download all release artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: release-*
           path: release/
           merge-multiple: true
 
-      - name: Rename release files with version
-        run: |
-          cd release
-          for f in reptool-*.zip; do
-            mv "$f" "reptool-v${{ steps.version.outputs.VERSION }}-${f#reptool-}"
-          done
-          ls -la
+      - name: List release files
+        run: ls -la release/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -274,3 +119,30 @@ jobs:
           files: release/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-npm:
+    needs: release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Publish to npm
+        run: |
+          cd npm
+          npm version "${{ steps.version.outputs.VERSION }}" --no-git-tag-version
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

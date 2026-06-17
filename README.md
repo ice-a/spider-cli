@@ -260,6 +260,92 @@ reptool hook ssl-pinning --platform android       # Frida Hook
 
 完整命令列表：`reptool --help`
 
+## 🔧 逆向工程 MCP 生态
+
+### 已安装的 MCP Server
+
+| MCP | 工具数 | 用途 | 安装方式 |
+|-----|--------|------|----------|
+| **camoufox-reverse** | 35 | 反检测浏览器 JS 逆向 | `pip install -e camoufox-reverse-mcp` |
+| **js-reverse** | - | Chrome DevTools JS 逆向 | `npm i -g js-reverse-mcp` |
+| **frida-mcp** | - | Frida 动态插桩 | `pip install frida-mcp` |
+| **apktool-mcp** | - | APK 反编译 | `pip install apktool-mcp-server` |
+| **playwright** | - | 通用浏览器自动化 | `npx @playwright/mcp@latest` |
+| **devtools-debugger** | - | Chrome 断点调试 | `npm i -g devtools-debugger-mcp` |
+| **native-devtools** | - | 截图+OCR+CDP | `npm i -g native-devtools-mcp` |
+
+### 逆向工具推荐
+
+| 工具 | 用途 | 下载 |
+|------|------|------|
+| **Ghidra** | 二进制逆向（免费） | https://ghidra-sre.org/ |
+| **IDA Pro** | 二进制逆向（付费） | https://hex-rays.com/ida-pro/ |
+| **Frida** | 动态插桩 | `pip install frida-tools` |
+| **JADX** | Android 反编译 | https://github.com/skylot/jadx/releases |
+| **APKTool** | APK 资源提取 | https://github.com/iBotPeaches/Apktool/releases |
+
+### MCP 配置示例
+
+**Claude Code** (`~/.claude/settings.json`)：
+
+```json
+{
+  "mcpServers": {
+    "camoufox-reverse": {
+      "command": "python",
+      "args": ["-m", "camoufox_reverse_mcp", "--headless"]
+    },
+    "js-reverse": {
+      "command": "npx",
+      "args": ["js-reverse-mcp"]
+    },
+    "frida-mcp": {
+      "command": "python",
+      "args": ["-m", "frida_mcp"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    },
+    "native-devtools": {
+      "command": "npx",
+      "args": ["native-devtools-mcp"]
+    }
+  }
+}
+```
+
+**Codex** (`~/.codex/config.toml`)：
+
+```toml
+[mcp_servers.camoufox-reverse]
+type = "stdio"
+command = "python"
+args = ["-m", "camoufox_reverse_mcp", "--headless"]
+
+[mcp_servers.js-reverse]
+type = "stdio"
+command = "npx"
+args = ["js-reverse-mcp"]
+
+[mcp_servers.frida-mcp]
+type = "stdio"
+command = "python"
+args = ["-m", "frida_mcp"]
+```
+
+### Frida Root 检测绕过脚本
+
+项目包含 `frida-root-bypass.js`，绕过 8 大类 Root 检测：
+
+```bash
+# USB 模式
+frida -U -f com.target.app -l frida-root-bypass.js --no-pause
+
+# 远程模式
+frida -H 192.168.1.100:27042 -f com.target.app -l frida-root-bypass.js --no-pause
+```
+
 ## 🔧 集成支持
 
 ### 支持的工具

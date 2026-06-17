@@ -12,3 +12,4 @@ npm/bin/reptool
 npm/bin/reptool-*.exe
 ca.cer
 test*.js
+.mimocode/

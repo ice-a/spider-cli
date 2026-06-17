@@ -160,7 +160,7 @@ jobs:
             if [ -d "$platform" ]; then
               echo "Publishing reptool-${platform}@${{ steps.version.outputs.VERSION }}"
               cd "$platform"
-              npm publish --access public
+              npm publish --access public --verbose 2>&1 || true
               cd ..
             fi
           done
@@ -170,7 +170,7 @@ jobs:
       - name: Publish main package to npm
         run: |
           cd npm/reptool
-          npm publish --access public
+          npm publish --access public --verbose 2>&1
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

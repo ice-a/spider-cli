@@ -108,15 +108,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download all npm artifacts
+      - name: Download platform artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: npm-*
-          path: npm/
-          merge-multiple: true
-
-      - name: List downloaded files
-        run: find npm/ -type f | head -50
+          path: artifacts/
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -128,51 +124,45 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Update package versions
+      - name: Prepare and publish
         run: |
           VERSION=${{ steps.version.outputs.VERSION }}
-          node -e "
-          const fs = require('fs');
-          const path = require('path');
-          const version = '$VERSION';
-          // Update main package
-          const mainPkg = JSON.parse(fs.readFileSync('npm/reptool/package.json', 'utf8'));
-          mainPkg.version = version;
-          for (const dep in mainPkg.optionalDependencies) {
-            mainPkg.optionalDependencies[dep] = version;
-          }
-          fs.writeFileSync('npm/reptool/package.json', JSON.stringify(mainPkg, null, 2) + '\n');
-          // Update platform packages
-          for (const platform of ['win32-x64', 'linux-x64', 'darwin-x64', 'darwin-arm64']) {
-            const pkgPath = path.join('npm', platform, 'package.json');
-            if (fs.existsSync(pkgPath)) {
-              const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-              pkg.version = version;
-              fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-            }
-          }
-          "
-
-      - name: Publish platform packages to npm
-        run: |
           echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
-          cd npm
+
+          # Copy platform binaries from artifacts into npm/ directories
           for platform in win32-x64 linux-x64 darwin-x64 darwin-arm64; do
-            if [ -d "$platform" ]; then
-              echo "Publishing reptool-${platform}@${{ steps.version.outputs.VERSION }}"
-              cd "$platform"
-              npm publish --access public
-              cd ..
+            src="artifacts/npm-${platform}"
+            if [ -d "$src" ]; then
+              mkdir -p "npm/${platform}/bin"
+              cp -r "$src"/* "npm/${platform}/"
+              # Update version
+              node -e "
+              const fs = require('fs');
+              const p = 'npm/${platform}/package.json';
+              if (fs.existsSync(p)) {
+                const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
+                pkg.version = '${VERSION}';
+                fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
+              }
+              "
+              echo "Publishing reptool-${platform}@${VERSION}"
+              cd "npm/${platform}"
+              npm publish --access public 2>&1 || echo "WARN: failed to publish reptool-${platform}"
+              cd ../..
             fi
           done
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Publish main package to npm
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}" > ~/.npmrc
+          # Update and publish main package
+          node -e "
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('npm/reptool/package.json', 'utf8'));
+          pkg.version = '${VERSION}';
+          for (const d in pkg.optionalDependencies) pkg.optionalDependencies[d] = '${VERSION}';
+          fs.writeFileSync('npm/reptool/package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+          echo "Publishing reptool@${VERSION}"
           cd npm/reptool
-          npm publish --access public
+          npm publish --access public 2>&1
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -185,12 +175,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download all npm artifacts
+      - name: Download platform artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: npm-*
-          path: npm/
-          merge-multiple: true
+          path: artifacts/
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -203,54 +192,48 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
-      - name: Update package versions for GPR
+      - name: Prepare and publish GPR
         run: |
           VERSION=${{ steps.version.outputs.VERSION }}
-          cd npm/reptool
-          node -e "
-          const fs = require('fs');
-          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-          pkg.name = '@ice-a/reptool';
-          pkg.repository.url = 'git+https://github.com/ice-a/spider-cli.git';
-          pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
-          for (const dep in pkg.optionalDependencies) {
-            pkg.optionalDependencies[dep] = '$VERSION';
-          }
-          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
-          "
-          cd ..
+
+          # Copy platform binaries from artifacts into npm/ directories
           for platform in win32-x64 linux-x64 darwin-x64 darwin-arm64; do
-            if [ -d "$platform" ]; then
-              cd "$platform"
+            src="artifacts/npm-${platform}"
+            if [ -d "$src" ]; then
+              mkdir -p "npm/${platform}/bin"
+              cp -r "$src"/* "npm/${platform}/"
+              # Update version and rename to scoped
               node -e "
               const fs = require('fs');
-              const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-              pkg.name = '@ice-a/' + pkg.name;
-              pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
-              fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
+              const p = 'npm/${platform}/package.json';
+              if (fs.existsSync(p)) {
+                const pkg = JSON.parse(fs.readFileSync(p, 'utf8'));
+                pkg.name = '@ice-a/' + pkg.name;
+                pkg.version = '${VERSION}';
+                pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
+                fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + '\n');
+              }
               "
-              cd ..
+              echo "Publishing @ice-a/reptool-${platform}@${VERSION}"
+              cd "npm/${platform}"
+              npm publish --access public 2>&1 || echo "WARN: failed to publish @ice-a/reptool-${platform}"
+              cd ../..
             fi
           done
 
-      - name: Publish platform packages to GPR
-        run: |
-          cd npm
-          for platform in win32-x64 linux-x64 darwin-x64 darwin-arm64; do
-            if [ -d "$platform" ]; then
-              echo "Publishing @ice-a/reptool-${platform}@${{ steps.version.outputs.VERSION }}"
-              cd "$platform"
-              npm publish --access public
-              cd ..
-            fi
-          done
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Publish main package to GPR
-        run: |
+          # Update and publish main package
+          node -e "
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('npm/reptool/package.json', 'utf8'));
+          pkg.name = '@ice-a/reptool';
+          pkg.version = '${VERSION}';
+          pkg.publishConfig = { registry: 'https://npm.pkg.github.com' };
+          for (const d in pkg.optionalDependencies) pkg.optionalDependencies[d] = '${VERSION}';
+          fs.writeFileSync('npm/reptool/package.json', JSON.stringify(pkg, null, 2) + '\n');
+          "
+          echo "Publishing @ice-a/reptool@${VERSION}"
           cd npm/reptool
-          npm publish --access public
+          npm publish --access public 2>&1
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

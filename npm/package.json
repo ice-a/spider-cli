@@ -1,5 +1,5 @@
 {
-  "name": "reptool",
+  "name": "reptool-cli",
   "version": "1.0.2",
   "description": "Rust 全栈逆向/爬虫/代理 CLI 工具链 + Claude/Codex 智能体技能系统",
   "main": "install.js",

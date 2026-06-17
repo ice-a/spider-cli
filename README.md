@@ -40,7 +40,7 @@
 #### 方式 1：npm 安装（推荐）
 
 ```bash
-npm install -g reptool
+npm install -g reptool-cli
 ```
 
 安装会自动下载对应平台的预编译二进制文件。

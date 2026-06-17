@@ -10,14 +10,14 @@
 [![Rust](https://img.shields.io/badge/rust-1.70+-orange.svg)](https://www.rust-lang.org/)
 [![MCP](https://img.shields.io/badge/MCP-41_tools-green.svg)](https://github.com/ice-a/spider-cli/blob/master/MCP_SETUP.md)
 [![Skills](https://img.shields.io/badge/Skills-5_agents-purple.svg)](https://github.com/ice-a/spider-cli/blob/master/skills/README.md)
-[![npm](https://img.shields.io/npm/v/reptool.svg)](https://www.npmjs.com/package/reptool)
+[![npm](https://img.shields.io/npm/v/reptool-cli.svg)](https://www.npmjs.com/package/reptool-cli)
 
 </div>
 
 ## 🚀 安装
 
 ```bash
-npm install -g reptool
+npm install -g reptool-cli
 ```
 
 安装会自动下载对应平台的预编译二进制文件。

@@ -100,4 +100,4 @@ cd ..
 echo ""
 echo "=== 发布完成 ==="
 echo "npm: https://www.npmjs.com/package/reptool"
-echo "用户安装: npm install -g reptool@${VERSION}"
+echo "用户安装: npm install -g reptool-cli@${VERSION}"

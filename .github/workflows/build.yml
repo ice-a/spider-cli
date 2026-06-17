@@ -91,7 +91,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: npm-${{ matrix.platform }}
-          path: npm/${{ matrix.platform }}/
+          path: npm/${{ matrix.platform }}
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
